@@ -1,18 +1,23 @@
 
 import { useState, useEffect } from "react";
-import { useCartContext } from "../../hooks/useCartContext"
+import { useNavigate } from "react-router-dom";
 
-import { fetchAssetPresentation } from "../../services/apiService"
+import { useCartContext } from "../../hooks/useCartContext"
 import { useAuthContext } from "../../hooks/useAuthContext";
+
+import { fetchAssetPresentation, createOrder } from "../../services/apiService"
 
 const SERVER_BASE_URL = process.env.REACT_APP_SERVER_BASE_URL
 
 const Cart = () => {
     const { user, loading: authLoading } = useAuthContext()
-    const { cartItems, addToCart, removeFromCart } = useCartContext()
     const [loading, setLoading] = useState(true);
-    const [cartItemPresentations, setCartItemPresentations] = useState([]);
     const [error, setError] = useState(null)
+    const [creatingOrder, setCreatingOrder] = useState(false);
+    const { cartItems, addToCart, removeFromCart } = useCartContext()
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("creditCard"); // Default selected payment method
+    const [cartItemPresentations, setCartItemPresentations] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchAssetPresentations = () => {
@@ -30,7 +35,41 @@ const Cart = () => {
 
         fetchAssetPresentations();
     }, [cartItems]);
-    console.log(cartItemPresentations.length)
+
+    const handlePaymentMethodChange = (event) => {
+        setSelectedPaymentMethod(event.target.value);
+    };
+
+    const handleProceedToCheckout = async () => {
+        if(!user){
+            setError("Must authenticate")
+            navigate(`/login`);
+            return null
+        }
+        setCreatingOrder(true);
+        const orderData = {}
+        orderData.items = cartItems
+        orderData.paymentMethod = selectedPaymentMethod
+        let orderId
+        await createOrder(orderData)
+            .then((response) => {
+                orderId = response.data
+                setError(null)
+                // Remove items from cart on success
+                cartItems.forEach((cartItem) => {
+                    removeFromCart(cartItem);
+                  });
+                console.log(orderId)
+            })
+            .catch((error) => {
+                setError(error.response.data.error)
+                console.log(error.response.data.error)
+            })
+            .finally(() => {
+                setCreatingOrder(false)
+            })
+    }
+
     return (
         <div style={{ textAlign: 'center' }}>
             {loading && (
@@ -88,29 +127,33 @@ const Cart = () => {
                                                 return totalPrice + currentItem.presentation.pricing.price
                                             }, 0)} USD
                                         </li>
-                                        <li className="list-group-item" style={{background: 'cyan'}}>
-                                        <div className="form-check">
-                                                <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" checked />
-                                                    <label className="form-check-label" for="flexRadioDefault2">
-                                                        Liver
-                                                    </label>
+                                        <li className="list-group-item" style={{ background: 'cyan' }}>
+                                            <div className="form-check">
+                                                <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" value="test" onChange={handlePaymentMethodChange} checked={selectedPaymentMethod === "test"} />
+                                                <label className="form-check-label" for="flexRadioDefault2">
+                                                    Test
+                                                </label>
                                             </div>
                                             <div className="form-check">
-                                                <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1" />
-                                                    <label className="form-check-label" for="flexRadioDefault1">
-                                                        Metamask Wallet
-                                                    </label>
+                                                <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1" value="cryptoCurrency" onChange={handlePaymentMethodChange} checked={selectedPaymentMethod === "cryptoCurrency"} />
+                                                <label className="form-check-label" for="flexRadioDefault1">
+                                                    Metamask Wallet
+                                                </label>
                                             </div>
                                             <div className="form-check">
-                                                <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" checked />
-                                                    <label className="form-check-label" for="flexRadioDefault2">
-                                                        Credit Card
-                                                    </label>
+                                                <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" value="creditCard" onChange={handlePaymentMethodChange} checked={selectedPaymentMethod === "creditCard"} />
+                                                <label className="form-check-label" for="flexRadioDefault2">
+                                                    Credit Card
+                                                </label>
                                             </div>
                                         </li>
                                         <li className="list-group-item">
-                                            <button type="button" className="btn btn-outline-success">Proceed to checkout</button>
+                                            <button type="button" className="btn btn-outline-success" onClick={handleProceedToCheckout} disabled={creatingOrder}>{creatingOrder ? "Creating Order..." : "Proceed to Checkout"}</button>
                                         </li>
+                                        {error && (
+                                            <div className="alert alert-danger" role="alert" style={{ marginTop: '15px' }}>
+                                                {error}
+                                            </div>)}
                                     </ul>
                                 </div>
                             </div>

@@ -35,6 +35,11 @@ apiUploadService.interceptors.request.use((config) => {
     return config;
 });
 
+/*
+*
+* Authentication
+*
+*/
 
 /**
  * Logout the user by adding the JWT to the blacklist.
@@ -62,6 +67,12 @@ export const authSignup = (signupDetails) => {
     return apiService.post(`users`, signupDetails);
 };
 
+/*
+*
+* Assets
+*
+*/
+
 // Fetches all assets
 export const fetchAssets = () => {
     return apiService.get(`assets`)
@@ -76,10 +87,20 @@ export const getOwnedAssets = (userId) => {
     return apiService.get(`assets/ownedBy/${userId}`)
 }
 
-
 // TODO Change naming: 'upload -> create' everywehere
 export const uploadAsset = (assetData) => {
     return apiUploadService.post('assets/upload', assetData)
+}
+
+/*
+*
+* Orders
+*
+*/
+
+// Create order
+export const createOrder = (orderData) => {
+    return apiService.post('orders', orderData)
 }
 
 export default apiService;
