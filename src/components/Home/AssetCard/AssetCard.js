@@ -2,7 +2,8 @@ import HoverVideoPlayer from 'react-hover-video-player';
 import { useCartContext } from '../../../hooks/useCartContext';
 
 
-const AssetCard = ({ id, title, description, presentationUrl, price, currency, uploadedBy, assetType }) => {
+const AssetCard = ({ id, title, description, presentationUrl, pricing, currency, uploadedBy, assetType }) => {
+    console.log(pricing)
     const { cartItems, addToCart, removeFromCart } = useCartContext()
 
     return (
@@ -35,8 +36,11 @@ const AssetCard = ({ id, title, description, presentationUrl, price, currency, u
                     }}>Add to cart</button>)}
 
                 <p>Uploaded By: {uploadedBy.userId} : {uploadedBy.username}</p>
-                <b>Price: </b>{price} {currency}
-            </div>
+                {pricing.tiers.map(tier => (
+                    <div key={tier.name}>
+                        <b>{tier.name} Price: </b>{tier.price} {tier.currency}
+                    </div>
+                ))}            </div>
         </div>
     )
 }

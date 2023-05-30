@@ -10,14 +10,16 @@ import { fetchAssetPresentation, createOrder } from "../../services/apiService"
 const SERVER_BASE_URL = process.env.REACT_APP_SERVER_BASE_URL
 
 const Cart = () => {
-    const { user, loading: authLoading } = useAuthContext()
+    const { user } = useAuthContext()
+    const { cartItems, removeFromCart } = useCartContext()
+    const navigate = useNavigate();
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null)
+    const [orderData, setOrderData] = useState(null)
     const [creatingOrder, setCreatingOrder] = useState(false);
-    const { cartItems, addToCart, removeFromCart } = useCartContext()
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("creditCard"); // Default selected payment method
     const [cartItemPresentations, setCartItemPresentations] = useState([]);
-    const navigate = useNavigate();
+
 
     useEffect(() => {
         const fetchAssetPresentations = () => {
@@ -26,6 +28,14 @@ const Cart = () => {
             ).then((responses) => {
                 const assetPresentations = responses.map((response) => response.data);
                 setCartItemPresentations(assetPresentations);
+                // Initalize temporary orderData
+                // Initialize orderData
+                const initialOrderData = assetPresentations.map((cartItem) => {
+                    const { id, pricing } = cartItem.presentation;
+                    const firstTier = pricing.tiers[0].name;
+                    return { itemId: id, tier: firstTier };
+                });
+                setOrderData(initialOrderData);
             }).catch((error) => {
                 setError(error);
             }).finally(() => {
@@ -36,36 +46,38 @@ const Cart = () => {
         fetchAssetPresentations();
     }, [cartItems]);
 
-    const handlePaymentMethodChange = (event) => {
-        setSelectedPaymentMethod(event.target.value);
+    const handleTierChange = (itemId, selectedTier) => {
+        setOrderData((prevOrderData) =>
+            prevOrderData.map((item) =>
+                item.itemId === itemId ? { ...item, tier: selectedTier } : item
+            )
+        );
     };
 
     const handleProceedToCheckout = async () => {
-        if(!user){
+        if (!user) {
             setError("Must authenticate")
             navigate(`/login`);
             return null
         }
         setCreatingOrder(true);
-        const orderData = {}
-        orderData.items = cartItems
-        orderData.paymentMethod = selectedPaymentMethod
         let orderId
         await createOrder(orderData)
             .then((response) => {
-                orderId = response.data
+                orderId = response.data._id
                 setError(null)
                 // Remove items from cart on success
                 cartItems.forEach((cartItem) => {
                     removeFromCart(cartItem);
-                  });
-                console.log(orderId)
+                });
             })
             .catch((error) => {
                 setError(error.response.data.error)
                 console.log(error.response.data.error)
             })
             .finally(() => {
+                navigate(`/payment?orderId=${orderId}`);
+
                 setCreatingOrder(false)
             })
     }
@@ -88,26 +100,38 @@ const Cart = () => {
                                     <ul className="list-group list-group-flush">
                                         {
                                             cartItemPresentations.map((cartItem) => (
-                                                <li className="list-group-item">
+                                                <li className="list-group-item" key={cartItem.presentation.id}>
                                                     <div className="row align-items-center">
-                                                        <div className="col-lg-3">
-                                                            <img style={{ width: '100%', height: '100%' }} src={SERVER_BASE_URL + cartItem.presentation.presentationUrl}></img>
+                                                        <div className="col-lg-4">
+                                                            <img style={{ width: '100%', height: '100%' }} src={SERVER_BASE_URL + cartItem.presentation.presentationUrl} alt={cartItem.presentation.title}></img>
                                                             <p>if we add pricing based on resolution</p>
-                                                            <select className="form-select" aria-label="Default select example">
-                                                                <option selected>Resolution</option>
-                                                                <option value="1">4K</option>
-                                                                <option value="2">HD</option>
-                                                                <option value="3">SD</option>
+                                                            <select
+                                                                className="form-select"
+                                                                aria-label="Default select example"
+                                                                defaultValue={cartItem.presentation.pricing.tiers[0].name}
+                                                                onChange={(e) => handleTierChange(cartItem.presentation.id, e.target.value)}
+                                                            >
+                                                                {cartItem.presentation.pricing.tiers.map((tier) => (
+                                                                    <option key={tier.name} value={tier.name}>{tier.name} {tier.price} {tier.currency}</option>
+                                                                ))}
                                                             </select>
                                                         </div>
-                                                        <div className="col-lg-4">
+                                                        <div className="col-lg-3">
                                                             <span><b>{cartItem.presentation.title}</b></span>
                                                             <br />
                                                             <span>{cartItem.presentation.description}</span>
                                                         </div>
                                                         <div className="col-lg-4">
-                                                            <span><b>Price: </b> {cartItem.presentation.pricing.price} {cartItem.presentation.pricing.currency}</span>
-                                                        </div>
+                                                            <span>
+                                                                <b>Price: </b>{" "}
+                                                                {orderData.find((item) => item.itemId === cartItem.presentation.id)?.tier}{" "}
+                                                                {cartItem.presentation.pricing.tiers.find(
+                                                                    (tier) => tier.name === orderData.find((item) => item.itemId === cartItem.presentation.id)?.tier
+                                                                )?.price}{" "}
+                                                                {cartItem.presentation.pricing.tiers.find(
+                                                                    (tier) => tier.name === orderData.find((item) => item.itemId === cartItem.presentation.id)?.tier
+                                                                )?.currency}
+                                                            </span>                                                        </div>
                                                         <div className="col-lg-1"><button className="btn btn-sm btn-danger" onClick={() => {
                                                             removeFromCart(cartItem.presentation.id)
                                                         }}>X</button></div>
@@ -123,29 +147,12 @@ const Cart = () => {
                                     <div className="card-header"><h6>Cart Info?</h6></div>
                                     <ul className="list-group list-group-flush">
                                         <li className="list-group-item">
-                                            <b>Total:</b> {cartItemPresentations.reduce((totalPrice, currentItem) => {
-                                                return totalPrice + currentItem.presentation.pricing.price
+                                            <b>Total:</b>{" "}
+                                            {cartItemPresentations.reduce((totalPrice, currentItem) => {
+                                                const selectedTier = orderData.find((item) => item.itemId === currentItem.presentation.id)?.tier;
+                                                const price = currentItem.presentation.pricing.tiers.find((tier) => tier.name === selectedTier)?.price;
+                                                return totalPrice + (price || 0);
                                             }, 0)} USD
-                                        </li>
-                                        <li className="list-group-item" style={{ background: 'cyan' }}>
-                                            <div className="form-check">
-                                                <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" value="test" onChange={handlePaymentMethodChange} checked={selectedPaymentMethod === "test"} />
-                                                <label className="form-check-label" for="flexRadioDefault2">
-                                                    Test
-                                                </label>
-                                            </div>
-                                            <div className="form-check">
-                                                <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1" value="cryptoCurrency" onChange={handlePaymentMethodChange} checked={selectedPaymentMethod === "cryptoCurrency"} />
-                                                <label className="form-check-label" for="flexRadioDefault1">
-                                                    Metamask Wallet
-                                                </label>
-                                            </div>
-                                            <div className="form-check">
-                                                <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" value="creditCard" onChange={handlePaymentMethodChange} checked={selectedPaymentMethod === "creditCard"} />
-                                                <label className="form-check-label" for="flexRadioDefault2">
-                                                    Credit Card
-                                                </label>
-                                            </div>
                                         </li>
                                         <li className="list-group-item">
                                             <button type="button" className="btn btn-outline-success" onClick={handleProceedToCheckout} disabled={creatingOrder}>{creatingOrder ? "Creating Order..." : "Proceed to Checkout"}</button>

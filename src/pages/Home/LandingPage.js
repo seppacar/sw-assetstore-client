@@ -16,7 +16,6 @@ const LandingPage = () => {
             .then((response) => {
                 // Set assets state
                 setAssets(response.data)
-
             })
             .catch((error) => {
                 // Handle error here
@@ -51,7 +50,7 @@ const LandingPage = () => {
                                 presentationUrl={SERVER_BASE_URL + asset.presentationUrl}
                                 description={asset.description}
                                 uploadedBy={asset.uploadedBy}
-                                price={asset.pricing.price}
+                                pricing={asset.pricing}
                                 currency={asset.pricing.currency} />
                         </div>
                     ))}

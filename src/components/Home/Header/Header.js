@@ -2,11 +2,11 @@ import './Header.css'
 import { useLogout } from '../../../hooks/useLogout';
 import { useAuthContext } from '../../../hooks/useAuthContext';
 import { useCartContext } from '../../../hooks/useCartContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
     const { user } = useAuthContext()
-    const { cartItems, addToCart, removeFromCart } = useCartContext()
+    const { cartItems } = useCartContext()
     const { logoutUser } = useLogout()
     const navigate = useNavigate()
 

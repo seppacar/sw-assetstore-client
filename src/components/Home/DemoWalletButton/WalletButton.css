@@ -1,0 +1,33 @@
+.button-main {
+    min-width: 300px;
+    height: 60px;
+    color: #1d1d1d;
+    padding: 5px 10px;
+    font-size: 24px;
+    font-weight: regular;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    display: inline-block;
+    outline: none;
+    border-radius: 5px;
+    border: none;
+    background-size: 120% auto;
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(231, 223, 223, 1) 35%, rgba(147, 172, 177, 1) 70%, rgba(30, 55, 60, 1) 100%);
+    ;
+  }
+  
+  .button-main:hover:not(:disabled) {
+    background-position: right center;
+  }
+  
+  .button-main:active:not(:disabled) {
+    top: 2px;
+  }
+  
+  .button-main:disabled,
+  .button-main[disabled] {
+    border: 1px solid #999999;
+    background-color: #cccccc;
+    color: #666666;
+  }

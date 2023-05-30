@@ -17,6 +17,7 @@ const UserDashboardPage = () => {
             getOwnedAssets(user.id)
                 .then((response) => {
                     // Set assets state
+                    console.log(response.data)
                     setOwnedAssets(response.data)
 
                 })
@@ -81,13 +82,16 @@ const UserDashboardPage = () => {
                                         <li className='list-group-item'>
                                             <div className='row'>
                                                 <div className='col-lg-3'>
-                                                    <img style={{ width: '100%', maxHeight: '100px', position: 'relative', objectFit: 'cover' }} src={SERVER_BASE_URL + asset.presentationUrl} alt={asset.title} />
+                                                    <img style={{ width: '100%', maxHeight: '100px', position: 'relative', objectFit: 'cover' }} src={SERVER_BASE_URL + asset.asset.presentationUrl} alt={asset.asset.title} />
                                                 </div>
                                                 <div className='col-lg-3'>
-                                                    {asset.title}
+                                                    {asset.asset.title}
                                                 </div>
                                                 <div className='col-lg-3'>
-                                                    {asset.description}
+                                                    {asset.asset.description}
+                                                </div>
+                                                <div className='col-lg-3'>
+                                                    {asset.ownershipType}
                                                 </div>
                                             </div>
                                         </li>

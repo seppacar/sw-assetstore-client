@@ -6,12 +6,14 @@ import Layout from './components/Home/Layout/Layout'
 import AdminLayout from './components/Admin/AdminLayout/AdminLayout'
 
 import './App.css';
+import DemoPage from './pages/Demo/DemoPage';
 
 function App() {
 
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/demo" element={<DemoPage />} />
         <Route path='/*' element={<Layout><HomeRoutes /></Layout>} />
         <Route path="/admin/*" element={<AdminLayout><AdminRoutes /></AdminLayout>} />
         <Route path="/admin/login" element={<AdminLayout>This is admin login page</AdminLayout>} />

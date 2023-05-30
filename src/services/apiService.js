@@ -64,8 +64,18 @@ export const authLogin = (loginCredentials) => {
  * @returns {Promise} - A promise that resolves to the signup response.
  */
 export const authSignup = (signupDetails) => {
-    return apiService.post(`users`, signupDetails);
+    return apiService.post(`auth/signup`, signupDetails);
 };
+/*
+*
+* Users
+*
+*
+*/
+// Gets users owned assets, need to provide a token
+export const getOwnedAssets = (userId) => {
+    return apiService.get(`users/${userId}/getOwned`)
+}
 
 /*
 *
@@ -79,17 +89,16 @@ export const fetchAssets = () => {
 }
 
 export const fetchAssetPresentation = (assetId) => {
-    return apiService.get(`assets/presentation/${assetId}`)
-}
-
-// Gets users owned assets, need to provide a token
-export const getOwnedAssets = (userId) => {
-    return apiService.get(`assets/ownedBy/${userId}`)
+    return apiService.get(`assets/${assetId}/presentation`)
 }
 
 // TODO Change naming: 'upload -> create' everywehere
 export const uploadAsset = (assetData) => {
-    return apiUploadService.post('assets/upload', assetData)
+    return apiUploadService.post('assets/upload', assetData, {
+        onUploadProgress: (data) => {
+            console.log(data.loaded, data.total)
+        }
+    })
 }
 
 /*
@@ -101,6 +110,28 @@ export const uploadAsset = (assetData) => {
 // Create order
 export const createOrder = (orderData) => {
     return apiService.post('orders', orderData)
+}
+
+// Get order by id
+export const fetchOrder = (orderId) => {
+    return apiService.get(`orders/${orderId}`)
+}
+
+/*
+*
+* Transactions
+*
+*/
+
+export const createTransaction = (transactionData) => {
+    return apiService.post('transactions', transactionData)
+}
+
+export const triggerValidateBlockchainTransaction = (txHash) => {
+    const data = {
+        txHash
+    }
+    return apiService.post('transactions/validateTransaction', data)
 }
 
 export default apiService;
